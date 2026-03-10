@@ -1112,9 +1112,12 @@ a { color: inherit; text-decoration: none; }
       <p class="section-sub reveal reveal-delay-2">Our CEO breaks down what GrowthX is, how it works, and why the fastest-growing companies use it to scale pipeline.</p>
     </div>
     <div class="video-player reveal reveal-delay-3" id="videoContainer">
+      <video id="previewVideo" autoplay muted loop playsinline
+        src="marcel-preview.mp4"
+        style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"></video>
       <video id="heroVideo" preload="metadata" playsinline
         src="https://www.dropbox.com/scl/fi/fuk0nuas6djy1h908eobl/Marcel-Hero-VSL-Short-Retention-Version.mp4?rlkey=w93qqzgfk1hwyupb0yr03s3ng&dl=1"
-        style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"></video>
+        style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0;transition:opacity 0.3s;"></video>
       <div class="video-player-overlay" id="videoOverlay" onclick="toggleVideo()">
         <div class="play-btn">
           <svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg>
@@ -1454,27 +1457,38 @@ window.addEventListener('scroll', () => {
   }
 }, { passive: true });
 
-// Video toggle
+// Video toggle with preview loop
+var fullVideoStarted = false;
 function toggleVideo() {
-  var v = document.getElementById('heroVideo');
-  var o = document.getElementById('videoOverlay');
-  if (v.paused) {
-    v.play();
-    o.style.opacity = '0';
-    o.style.pointerEvents = 'none';
-    v.setAttribute('controls', 'true');
+  var preview = document.getElementById('previewVideo');
+  var full = document.getElementById('heroVideo');
+  var overlay = document.getElementById('videoOverlay');
+  if (!fullVideoStarted || full.paused) {
+    preview.pause();
+    preview.style.opacity = '0';
+    full.style.opacity = '1';
+    full.play();
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    full.setAttribute('controls', 'true');
+    fullVideoStarted = true;
   } else {
-    v.pause();
-    o.style.opacity = '1';
-    o.style.pointerEvents = 'auto';
-    v.removeAttribute('controls');
+    full.pause();
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'auto';
+    full.removeAttribute('controls');
   }
 }
 document.getElementById('heroVideo').addEventListener('ended', function() {
-  var o = document.getElementById('videoOverlay');
-  o.style.opacity = '1';
-  o.style.pointerEvents = 'auto';
+  var preview = document.getElementById('previewVideo');
+  var overlay = document.getElementById('videoOverlay');
+  overlay.style.opacity = '1';
+  overlay.style.pointerEvents = 'auto';
   this.removeAttribute('controls');
+  this.style.opacity = '0';
+  preview.style.opacity = '1';
+  preview.play();
+  fullVideoStarted = false;
 });
 
 // Testimonial carousel
