@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building a Landing Page with an AI Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; }
+
+:root {
+  --bg: #080A0D;
+  --paper: #F1EEE9;
+  --white: #FDFDFF;
+  --why: #FFCC00;
+  --why-soft: rgba(255,204,0,0.10);
+  --cee: #0118D8;
+  --cee-soft: rgba(1,24,216,0.08);
+  --muted: rgba(253,253,255,0.45);
+  --border: rgba(253,253,255,0.08);
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--white);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Slide container */
+.deck {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 64px 80px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.slide.center { align-items: center; text-align: center; }
+.slide.center .slide-body { max-width: 800px; }
+
+/* Typography */
+.slide h1 {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -2px;
+}
+.slide h2 {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+.slide h3 {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.slide p {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 640px;
+}
+.slide .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--why);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.slide .eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--why);
+}
+.slide.center .eyebrow { justify-content: center; }
+em { color: var(--why); font-style: italic; }
+.big-number {
+  font-family: var(--font-display);
+  font-size: clamp(56px, 8vw, 96px);
+  color: var(--why);
+  line-height: 1;
+  letter-spacing: -3px;
+}
+
+/* Step list */
+.steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 40px;
+}
+.steps li {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.step-num {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--why-soft);
+  color: var(--why);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+}
+.step-text strong { color: var(--white); }
+.step-text span { color: var(--muted); }
+
+/* Timeline */
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2px;
+  margin-top: 48px;
+  background: var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.timeline-item {
+  background: var(--bg);
+  padding: 32px 24px;
+}
+.timeline-item .t-phase {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--why);
+  margin-bottom: 12px;
+}
+.timeline-item h3 { margin-bottom: 8px; }
+.timeline-item p { font-size: 14px; line-height: 1.6; color: var(--muted); max-width: none; }
+
+/* Two-column layout */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  margin-top: 40px;
+}
+.two-col-text p { margin-top: 16px; }
+.two-col-visual {
+  background: var(--why-soft);
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+}
+.two-col-visual img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* Stat grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin-top: 48px;
+  background: var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.stat-item {
+  background: var(--bg);
+  padding: 40px 32px;
+  text-align: center;
+}
+.stat-item .stat-val {
+  font-family: var(--font-display);
+  font-size: 44px;
+  color: var(--why);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.stat-item .stat-desc {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Bullet list */
+.bullets {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 32px;
+}
+.bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.bullets li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--why);
+  margin-top: 8px;
+}
+.bullets li strong { color: var(--white); }
+
+/* Meta callout */
+.meta-box {
+  margin-top: 40px;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,204,0,0.03);
+}
+.meta-box p { font-size: 16px; color: var(--muted); max-width: none; }
+.meta-box strong { color: var(--why); }
+
+/* Navigation */
+.nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  z-index: 10;
+  border-top: 1px solid var(--border);
+  background: rgba(8,10,13,0.85);
+  backdrop-filter: blur(12px);
+}
+.nav-bar .counter {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+.nav-bar .progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--why);
+  transition: width 0.4s ease;
+}
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.nav-btn:hover { border-color: rgba(253,253,255,0.25); color: var(--white); }
+.nav-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+.nav-btns { display: flex; gap: 8px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .slide { padding: 48px 32px; }
+  .two-col { grid-template-columns: 1fr; gap: 32px; }
+  .timeline { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide center active" data-slide="0">
+  <div class="slide-body">
+    <div class="eyebrow">Case Study</div>
+    <h1>How an AI agent built a <em>production-ready</em> landing page in one session.</h1>
+    <p style="margin-top:24px;">From blank canvas to live prototype — the full process of building GrowthX's new landing page with an AI coding agent in Cursor.</p>
+  </div>
+</div>
+
+<!-- SLIDE 2: The Brief -->
+<div class="slide" data-slide="1">
+  <div class="eyebrow">The Brief</div>
+  <h2>It started with a conversation.</h2>
+  <p style="margin-top:20px;">The VP of GTM wanted a landing page that treated the user experience holistically — the <em>before</em>, <em>during</em>, and <em>after</em> of encountering video content. Not just a page. A system.</p>
+  <div class="two-col">
+    <div class="two-col-text">
+      <h3>The inputs:</h3>
+      <ul class="bullets">
+        <li><strong>A reference site</strong> — storyarb.com for UX excellence</li>
+        <li><strong>The brand</strong> — growthx.ai for positioning and visual identity</li>
+        <li><strong>A video transcript</strong> — the CEO's pitch for the page</li>
+        <li><strong>Brand guidelines</strong> — colors, fonts, tone of voice</li>
+      </ul>
+    </div>
+    <div class="two-col-visual" style="background:var(--cee-soft);">
+      <p style="font-size:48px;line-height:1.2;font-family:var(--font-display);color:var(--white);">"Make this the very best possible experience for a marketing operator."</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: The Process -->
+<div class="slide" data-slide="2">
+  <div class="eyebrow">The Process</div>
+  <h2>Seven phases. One session.</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="t-phase">Phase 1</div>
+      <h3>Research</h3>
+      <p>Navigated both reference sites in a real browser. Took screenshots at every scroll depth. Extracted copy, layout patterns, and SVG logos.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="t-phase">Phase 2</div>
+      <h3>Architecture</h3>
+      <p>Designed a 10-section page flow based on storyarb's proven narrative arc, adapted for GrowthX's positioning.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="t-phase">Phase 3</div>
+      <h3>Build v1</h3>
+      <p>Wrote a complete single-file HTML/CSS/JS prototype with scroll animations, responsive grid, and video embed.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="t-phase">Phase 4</div>
+      <h3>Brand Alignment</h3>
+      <p>Applied brand guidelines — Messina Sans fonts, color palette with exact hex values, logo integration, tone of voice.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="t-phase">Phase 5</div>
+      <h3>UX Audit</h3>
+      <p>Performed a 10-point UX comparison against storyarb. Identified gaps in hero impact, testimonial weight, and conversion paths.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="t-phase">Phase 6</div>
+      <h3>Build v2</h3>
+      <p>Rebuilt from scratch incorporating all audit findings — dark hero, testimonial carousel, timeline pains, newsletter capture, brand colors.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="t-phase">Phase 7</div>
+      <h3>Ship</h3>
+      <p>Created a standalone GitHub repo, compressed a video preview loop, enabled GitHub Pages. Live URL in minutes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: What the agent actually did -->
+<div class="slide" data-slide="3">
+  <div class="eyebrow">Capabilities Demonstrated</div>
+  <h2>What the AI agent <em>actually</em> did.</h2>
+  <ol class="steps">
+    <li>
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Browsed live websites</strong> <span>— navigated storyarb.com and growthx.ai, scrolled through sections, took screenshots, and extracted inline SVG logos via JavaScript injection</span></div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>Interpreted visual brand guidelines</strong> <span>— read PNG images of color palettes, typography specs, and tone-of-voice docs, then mapped them to CSS variables</span></div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Wrote production-quality code</strong> <span>— 1,500 lines of semantic HTML, responsive CSS with design tokens, and vanilla JS for scroll animations, video control, and a testimonial carousel</span></div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Performed a UX audit</strong> <span>— analyzed storyarb section-by-section as a "world-class designer" and produced a prioritized 10-point improvement plan</span></div>
+    </li>
+    <li>
+      <div class="step-num">5</div>
+      <div class="step-text"><strong>Compressed video with ffmpeg</strong> <span>— installed ffmpeg, trimmed a 74MB source video to a 333KB muted preview loop for the hero</span></div>
+    </li>
+    <li>
+      <div class="step-num">6</div>
+      <div class="step-text"><strong>Deployed to production</strong> <span>— created a GitHub repo, pushed files, enabled GitHub Pages via API, and delivered a shareable live URL</span></div>
+    </li>
+  </ol>
+</div>
+
+<!-- SLIDE 5: By the numbers -->
+<div class="slide center" data-slide="4">
+  <div class="slide-body">
+    <div class="eyebrow">By the Numbers</div>
+    <h2>One conversation. Zero handoffs.</h2>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <div class="stat-val">~1,500</div>
+        <div class="stat-desc">Lines of code written</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">2</div>
+        <div class="stat-desc">Complete page versions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">15</div>
+        <div class="stat-desc">Real client logos extracted</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">10</div>
+        <div class="stat-desc">UX improvements identified</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">74→0.3</div>
+        <div class="stat-desc">MB video compressed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">1</div>
+        <div class="stat-desc">Live URL deployed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: What this means -->
+<div class="slide" data-slide="5">
+  <div class="eyebrow">The Takeaway</div>
+  <h2>This is what AI agents <em>actually</em> unlock.</h2>
+  <p style="margin-top:20px;">Not "AI-generated content." Not chatbot summaries. A tireless collaborator that researches, designs, codes, audits, iterates, and ships — in a single continuous session.</p>
+  <ul class="bullets" style="margin-top:40px;">
+    <li><strong>Speed without sacrifice.</strong> Two full page versions, a UX audit, brand alignment, and deployment — in one sitting.</li>
+    <li><strong>Full-stack capability.</strong> The same agent browsed websites, wrote CSS, compressed video, created git repos, and called GitHub APIs.</li>
+    <li><strong>Human-directed, AI-executed.</strong> Every decision was guided by a human. The agent handled the execution at a pace no team could match.</li>
+    <li><strong>Compounding context.</strong> Each iteration built on the last. No re-briefing. No context loss between handoffs.</li>
+  </ul>
+</div>
+
+<!-- SLIDE 7: Meta -->
+<div class="slide center" data-slide="6">
+  <div class="slide-body">
+    <div class="eyebrow">One more thing</div>
+    <h2>The agent also made <em>this slide deck</em>.</h2>
+    <p style="margin-top:24px;">This presentation was designed, coded, and deployed by the same AI agent, in the same session, as the final step of the project.</p>
+    <div class="meta-box">
+      <p>Built as a single-file HTML slide deck with keyboard navigation, progress tracking, and the same GrowthX brand system — then pushed to <strong>GitHub Pages</strong> alongside the prototype.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: End -->
+<div class="slide center" data-slide="7">
+  <div class="slide-body">
+    <div class="big-number" style="margin-bottom:32px;">&#x2192;</div>
+    <h1>See the prototype live.</h1>
+    <p style="margin-top:20px;">
+      <a href="index.html" style="color:var(--why);text-decoration:underline;text-underline-offset:4px;font-weight:600;">williamproctor.github.io/growthx-landing-prototype</a>
+    </p>
+  </div>
+</div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <div class="progress" id="progress"></div>
+  <div class="counter"><span id="current">1</span> / <span id="total">8</span></div>
+  <div class="nav-btns">
+    <button class="nav-btn" id="prevBtn" onclick="go(-1)">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="nav-btn" id="nextBtn" onclick="go(1)">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+var idx = 0;
+var slides = document.querySelectorAll('.slide');
+var total = slides.length;
+document.getElementById('total').textContent = total;
+
+function show(n) {
+  if (n < 0 || n >= total) return;
+  slides[idx].classList.remove('active');
+  idx = n;
+  slides[idx].classList.add('active');
+  document.getElementById('current').textContent = idx + 1;
+  document.getElementById('progress').style.width = ((idx + 1) / total * 100) + '%';
+}
+
+function go(dir) { show(idx + dir); }
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+});
+
+var touchStartX = 0;
+document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', function(e) {
+  var diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff) > 50) go(diff < 0 ? 1 : -1);
+});
+
+show(0);
+</script>
+</body>
+</html>
